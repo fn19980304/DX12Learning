@@ -1,6 +1,7 @@
 /*
 *  GameTimerÀà
 *  GameTimer.h
+*  ×÷Õß£º Frank Luna (C)
 */
 
 #ifndef GAMETIMER_H

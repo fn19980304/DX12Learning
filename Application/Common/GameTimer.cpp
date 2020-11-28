@@ -1,6 +1,7 @@
 /*
 *  GameTimer类实现
 *  GameTimer.cpp
+*  作者： Frank Luna (C)
 */
 
 #include <windows.h>
