@@ -1,6 +1,7 @@
 /*
 *  实用代码工具类
 *  d3dUtil.h
+*  作者： Frank Luna (C)
 */
 
 #pragma once

@@ -1,6 +1,7 @@
 /*
 *  实用代码工具类实现
 *  d3dUtil.cpp
+*  作者： Frank Luna (C)
 */
 
 #include "d3dUtil.h"
