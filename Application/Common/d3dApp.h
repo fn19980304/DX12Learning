@@ -1,6 +1,7 @@
 /*
 *  Direct3D应用程序类
 *  d3dApp.h
+*  作者： Frank Luna (C)
 */
 
 #pragma once

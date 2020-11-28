@@ -1,6 +1,7 @@
 /*
 *  Direct3D应用程序类实现
 *  d3dApp.cpp
+*  作者： Frank Luna (C)
 */
 
 #include "d3dApp.h"
