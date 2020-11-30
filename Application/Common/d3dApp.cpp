@@ -237,9 +237,14 @@ void D3DApp::OnResize()
 		IID_PPV_ARGS(mDepthStencilBuffer.GetAddressOf())));
 
 	// 利用该资源格式，为整个资源的第0mip层创建描述符
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	dsvDesc.Format = mDepthStencilFormat;
+	dsvDesc.Texture2D.MipSlice = 0;
 	md3dDevice->CreateDepthStencilView(
 		mDepthStencilBuffer.Get(),  // 指定深度模板缓冲区资源
-		nullptr,					// 资源中元素的数据格式（书中为nullptr，官方代码中使用dsvDesc）
+		&dsvDesc,					// 资源中元素的数据格式（书中为nullptr，官方代码中使用dsvDesc）
 		DepthStencilView());
 
 	// 将资源从初始状态转换为深度缓冲区
