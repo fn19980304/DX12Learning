@@ -28,6 +28,21 @@
 #include <comdef.h>
 #include "d3dx12.h"
 
+class d3dUtil
+{
+public:
+
+    // 创建默认缓冲区
+    // 默认缓冲区为用D3D12_HEAP_TYPE_DEFAULT类型创建的缓冲区
+    // 用于存放静态几何体，优化性能
+    static Microsoft::WRL::ComPtr<ID3D12Resource> CreateDefaultBuffer(
+        ID3D12Device* device,
+        ID3D12GraphicsCommandList* cmdList,
+        const void* initData,
+        UINT64 byteSize,
+        Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer);
+};
+
 // 转换成宽字符类型的字符串，wstring
 // Windows平台使用wstring和wchar_t，用于UTF-16编码的字符，处理方式是在字符串前+L
 inline std::wstring AnsiToWString(const std::string& str)
