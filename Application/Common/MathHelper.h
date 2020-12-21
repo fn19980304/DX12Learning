@@ -78,6 +78,7 @@ public:
 		return DirectX::XMMatrixTranspose(DirectX::XMMatrixInverse(&det, A));
 	}
 
+	// 获得一个4X4的单位矩阵
 	static DirectX::XMFLOAT4X4 Identity4x4()
 	{
 		static DirectX::XMFLOAT4X4 I(
