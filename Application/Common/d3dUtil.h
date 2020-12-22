@@ -28,6 +28,15 @@
 #include <comdef.h>
 #include "d3dx12.h"
 
+// 转换成宽字符类型的字符串，wstring
+// Windows平台使用wstring和wchar_t，用于UTF-16编码的字符，处理方式是在字符串前+L
+inline std::wstring AnsiToWString(const std::string& str)
+{
+    WCHAR buffer[512];
+    MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, buffer, 512);
+    return std::wstring(buffer);
+}
+
 class d3dUtil
 {
 public:
@@ -65,15 +74,6 @@ public:
         const std::string& entrypoint,
         const std::string& target);
 };
-
-// 转换成宽字符类型的字符串，wstring
-// Windows平台使用wstring和wchar_t，用于UTF-16编码的字符，处理方式是在字符串前+L
-inline std::wstring AnsiToWString(const std::string& str)
-{
-    WCHAR buffer[512];
-    MultiByteToWideChar(CP_ACP, 0, str.c_str(), -1, buffer, 512);
-    return std::wstring(buffer);
-}
 
 // 检查返回的HRESULT值，检查失败抛出异常
 // 显示出错的错误码、函数名、文件名以及行号

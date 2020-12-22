@@ -9,6 +9,15 @@
 
 using Microsoft::WRL::ComPtr;
 
+// DxException类构造函数定义，利用初始化列表来初始化字段
+DxException::DxException(HRESULT hr, const std::wstring& functionName, const std::wstring& filename, int lineNumber) :
+    ErrorCode(hr),
+    FunctionName(functionName),
+    Filename(filename),
+    LineNumber(lineNumber)
+{
+}
+
 // 创建默认缓冲区
 // 默认缓冲区为用D3D12_HEAP_TYPE_DEFAULT类型创建的缓冲区
 // 用于存放静态几何体，优化性能
@@ -105,15 +114,6 @@ ComPtr<ID3DBlob> d3dUtil::CompileShader(
     ThrowIfFailed(hr);
 
     return byteCode;
-}
-
-// DxException类构造函数定义，利用初始化列表来初始化字段
-DxException::DxException(HRESULT hr, const std::wstring& functionName, const std::wstring& filename, int lineNumber) :
-    ErrorCode(hr),
-    FunctionName(functionName),
-    Filename(filename),
-    LineNumber(lineNumber)
-{
 }
 
 // DxException类成员函数ToString的定义
