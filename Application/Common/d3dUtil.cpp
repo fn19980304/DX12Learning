@@ -108,8 +108,10 @@ ComPtr<ID3DBlob> d3dUtil::CompileShader(
         &byteCode,           // 存储编译好的着色器对象字节码
         &errors);            // 存储报错的字符串
 
+    // 将错误信息输出到调试窗口
+    // 在使用GetBufferPointer()获得的指针时需要将它转换为适当的类型
     if(errors!=nullptr)
-        OutputDebugStringA((char*)errors->GetBufferPointer());
+        OutputDebugStringA((char*)errors->GetBufferPointer());  
 
     ThrowIfFailed(hr);
 
