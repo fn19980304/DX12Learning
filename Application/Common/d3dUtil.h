@@ -52,15 +52,18 @@ public:
         return (byteSize + 255) & ~255;
     }
 
-    // 创建默认缓冲区
-    // 默认缓冲区为用D3D12_HEAP_TYPE_DEFAULT类型创建的缓冲区
-    // 用于存放静态几何体，优化性能
     static Microsoft::WRL::ComPtr<ID3D12Resource> CreateDefaultBuffer(
         ID3D12Device* device,
         ID3D12GraphicsCommandList* cmdList,
         const void* initData,
         UINT64 byteSize,
         Microsoft::WRL::ComPtr<ID3D12Resource>& uploadBuffer);
+
+    static Microsoft::WRL::ComPtr<ID3DBlob> CompileShader(
+        const std::wstring& filename,
+        const D3D_SHADER_MACRO* defines,
+        const std::string& entrypoint,
+        const std::string& target);
 };
 
 // 转换成宽字符类型的字符串，wstring

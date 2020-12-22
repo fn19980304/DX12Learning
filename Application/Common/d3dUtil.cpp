@@ -9,7 +9,9 @@
 
 using Microsoft::WRL::ComPtr;
 
-// 用于创建默认缓冲区的方法
+// 创建默认缓冲区
+// 默认缓冲区为用D3D12_HEAP_TYPE_DEFAULT类型创建的缓冲区
+// 用于存放静态几何体，优化性能
 Microsoft::WRL::ComPtr<ID3D12Resource> d3dUtil::CreateDefaultBuffer(
     ID3D12Device* device,
     ID3D12GraphicsCommandList* cmdList,
@@ -67,6 +69,42 @@ Microsoft::WRL::ComPtr<ID3D12Resource> d3dUtil::CreateDefaultBuffer(
 
     // 注意：待调用者得知复制完成的消息后，才能释放uploadBuffer
     return defaultBuffer;
+}
+
+// 编译着色器
+ComPtr<ID3DBlob> d3dUtil::CompileShader(
+    const std::wstring& filename,
+    const D3D_SHADER_MACRO* defines,
+    const std::string& entrypoint,
+    const std::string& target)
+{
+    // 若处于调试模式，则使用调试标志
+    UINT compileFlags = 0;
+#if defined(DEBUG) || defined(_DEBUG)  
+    compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
+#endif
+
+    HRESULT hr = S_OK;
+
+    ComPtr<ID3DBlob> byteCode = nullptr;
+    ComPtr<ID3DBlob> errors;
+    hr = D3DCompileFromFile(
+        filename.c_str(),    // 希望编译的以.hlsl作为扩展名的HLSL源代码文件
+        defines,            
+        D3D_COMPILE_STANDARD_FILE_INCLUDE,  
+        entrypoint.c_str(),  // 着色器入口点函数名
+        target.c_str(),      // 指定所用着色器类型和版本的字符串
+        compileFlags,        // 指定应如何编译的标志
+        0, 
+        &byteCode,           // 存储编译好的着色器对象字节码
+        &errors);            // 存储报错的字符串
+
+    if(errors!=nullptr)
+        OutputDebugStringA((char*)errors->GetBufferPointer());
+
+    ThrowIfFailed(hr);
+
+    return byteCode;
 }
 
 // DxException类构造函数定义，利用初始化列表来初始化字段
