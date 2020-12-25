@@ -71,7 +71,7 @@ public:
 	// 将数据从CPU端控制的内存复制到常量缓冲区
 	void CopyData(int elementIndex, const T& data)
 	{
-		memcpy(&mMappedData[elementIndex * mElementByteSize], &data, sizeof(T)));
+		memcpy(&mMappedData[elementIndex * mElementByteSize], &data, sizeof(T));
 	}
 
 private:
