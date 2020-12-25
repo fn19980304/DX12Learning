@@ -94,7 +94,7 @@ public:
 // 用SubmeshGeometry来定义MeshGeometry中存储的单个几何体
 struct SubmeshGeometry
 {
-    UINT IndexCount = 0;          // 索引数量
+    UINT IndexCount = 0;          // 索引（元素）数量
     UINT StartIndexLocation = 0;  // （全局）索引缓冲区中预读取的起始索引
     INT BaseVertexLocation = 0;   // 基准顶点地址
 
