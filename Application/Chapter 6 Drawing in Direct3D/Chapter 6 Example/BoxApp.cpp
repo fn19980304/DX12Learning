@@ -57,10 +57,14 @@ private:
 
 	std::unique_ptr<UploadBuffer<ObjectConstants>> mObjectCB = nullptr;
 
+	std::unique_ptr<MeshGeometry> mBoxGeo = nullptr;
+
 	ComPtr<ID3DBlob> mvsByteCode = nullptr;
 	ComPtr<ID3DBlob> mpsByteCode = nullptr;
 
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
+
+	ComPtr<ID3D12PipelineState> mPSO = nullptr;
 }; 
 
 BoxApp::BoxApp(HINSTANCE hInstance) :D3DApp(hInstance)
@@ -185,4 +189,115 @@ void BoxApp::BuildShadersAndInputLayout()
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 	};
+}
+
+// 构建立方体
+void BoxApp::BuildBoxGeometry()
+{
+	// 定义立方体的八个顶点
+	std::array<Vertex, 8> vertices =
+	{
+		Vertex({ XMFLOAT3(-1.0f, -1.0f, -1.0f), XMFLOAT4(Colors::White) }),
+		Vertex({ XMFLOAT3(-1.0f, +1.0f, -1.0f), XMFLOAT4(Colors::Black) }),
+		Vertex({ XMFLOAT3(+1.0f, +1.0f, -1.0f), XMFLOAT4(Colors::Red) }),
+		Vertex({ XMFLOAT3(+1.0f, -1.0f, -1.0f), XMFLOAT4(Colors::Green) }),
+		Vertex({ XMFLOAT3(-1.0f, -1.0f, +1.0f), XMFLOAT4(Colors::Blue) }),
+		Vertex({ XMFLOAT3(-1.0f, +1.0f, +1.0f), XMFLOAT4(Colors::Yellow) }),
+		Vertex({ XMFLOAT3(+1.0f, +1.0f, +1.0f), XMFLOAT4(Colors::Cyan) }),
+		Vertex({ XMFLOAT3(+1.0f, -1.0f, +1.0f), XMFLOAT4(Colors::Magenta) })
+	};
+
+	// 定义立方体的索引
+	std::array<std::uint16_t, 36> indices =
+	{
+		// 前表面
+		0, 1, 2,
+		0, 2, 3,
+
+		// 后表面
+		4, 6, 5,
+		4, 7, 6,
+
+		// 左表面
+		4, 5, 1,
+		4, 1, 0,
+
+		// 右表面
+		3, 2, 6,
+		3, 6, 7,
+
+		// 上表面
+		1 ,5, 6,
+		1, 6, 2,
+
+		// 下表面
+		4, 0, 3,
+		4, 3, 7
+	};
+
+	const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
+	const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
+
+	mBoxGeo = std::make_unique<MeshGeometry>();
+	mBoxGeo->Name = "boxGeo";
+
+	// 将顶点数据复制到CPU内存中
+	ThrowIfFailed(D3DCreateBlob(vbByteSize, &mBoxGeo->VertexBufferCPU));
+	CopyMemory(mBoxGeo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+
+	// 将索引数据复制到CPU内存中
+	ThrowIfFailed(D3DCreateBlob(ibByteSize, &mBoxGeo->IndexBufferCPU));
+	CopyMemory(mBoxGeo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+
+	// 通过顶点数据创建相应的顶点缓冲区资源
+	mBoxGeo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+		mCommandList.Get(), vertices.data(), vbByteSize, mBoxGeo->VertexBufferUploader);
+
+	// 通过索引数据创建相应的索引缓冲区资源
+	mBoxGeo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+		mCommandList.Get(), indices.data(), ibByteSize, mBoxGeo->IndexBufferUploader);
+
+	mBoxGeo->VertexByteStride = sizeof(Vertex);
+	mBoxGeo->VertexBufferByteSize = vbByteSize;
+	mBoxGeo->IndexFormat = DXGI_FORMAT_R16_UINT;
+	mBoxGeo->IndexBufferByteSize = ibByteSize;
+
+	SubmeshGeometry submesh;
+	submesh.IndexCount = (UINT)indices.size();
+	submesh.StartIndexLocation = 0;
+	submesh.BaseVertexLocation = 0;
+
+	mBoxGeo->DrawArgs["box"] = submesh;
+}
+
+// 构建流水线状态对象
+void BoxApp::BuildPSO()
+{
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
+	ZeroMemory(&psoDesc, sizeof(D3D12_GRAPHICS_PIPELINE_STATE_DESC));
+	psoDesc.InputLayout = { mInputLayout.data(), (UINT)mInputLayout.size() };  // 输入布局描述
+	psoDesc.pRootSignature = mRootSignature.Get();                             // 根签名指针
+	psoDesc.VS =
+	{
+		reinterpret_cast<BYTE*>(mvsByteCode->GetBufferPointer()),
+		mvsByteCode->GetBufferSize()
+	};                                                                         // 顶点着色器
+	psoDesc.PS =
+	{
+		reinterpret_cast<BYTE*>(mpsByteCode->GetBufferPointer()),
+		mpsByteCode->GetBufferSize()
+	};											                               // 像素着色器
+
+	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);          // 光栅化状态
+	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);					   // 混合状态
+	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);     // 深度/模板状态
+	psoDesc.SampleMask = UINT_MAX;											   // 对所有点进行采样
+	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;    // 图元的拓扑类型
+	psoDesc.NumRenderTargets = 1;											   // 同时所用的渲染目标数量
+	psoDesc.RTVFormats[0] = mBackBufferFormat;								   // 渲染目标格式
+	psoDesc.SampleDesc.Count= m4xMsaaState ? 4 : 1;							   // 多重采用对每个像素的采样数量
+	psoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;      // 多重采样的质量级别
+	psoDesc.DSVFormat = mDepthStencilFormat;                                   // 深度/模板缓冲区的格式
+	
+	ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPSO)));
 }
