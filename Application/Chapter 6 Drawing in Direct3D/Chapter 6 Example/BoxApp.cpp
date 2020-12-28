@@ -46,6 +46,10 @@ private:
 	virtual void Update(const GameTimer& gt)override;
 	virtual void Draw(const GameTimer& gt)override;
 
+	virtual void OnMouseDown(WPARAM btnState, int x, int y)override;
+	virtual void OnMouseUp(WPARAM btnState, int x, int y)override;
+	virtual void OnMouseMove(WPARAM btnState, int x, int y)override;
+
 	void BuildDescriptorHeaps();
 	void BuildConstantBuffers();
 	void BuildRootSignature();
@@ -76,6 +80,8 @@ private:
 	float mTheta = 1.5f * XM_PI;
 	float mPhi = XM_PIDIV4;
 	float mRadius = 5.0f;
+
+	POINT mLastMousePos;
 }; 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
@@ -236,6 +242,53 @@ void BoxApp::Draw(const GameTimer& gt)
 
 	// 等待绘制此帧的一系列命令执行完毕
 	FlushCommandQueue();
+}
+
+void BoxApp::OnMouseDown(WPARAM btnState, int x, int y)
+{
+	mLastMousePos.x = x;
+	mLastMousePos.y = y;
+
+	SetCapture(mhMainWnd);
+}
+
+void BoxApp::OnMouseUp(WPARAM btnState, int x, int y)
+{
+	ReleaseCapture();
+}
+
+void BoxApp::OnMouseMove(WPARAM btnState, int x, int y)
+{
+	// 鼠标左键
+	if ((btnState & MK_LBUTTON) != 0)
+	{
+		// 根据鼠标的移动距离计算旋转角度，令每个像素按此角度的1/4进行旋转
+		float dx = XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
+		float dy = XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
+
+		// 根据鼠标的输入来更新摄像机绕立方体旋转的角度
+		mTheta += dx; 
+		mPhi += dy;
+
+		// 限制角度mPhi的范围
+		mPhi = MathHelper::Clamp(mPhi, 0.1f, MathHelper::Pi - 0.1f);
+	}
+	// 鼠标右键
+	else if ((btnState & MK_RBUTTON) != 0)
+	{
+		// 使场景中的每个像素按鼠标移动距离的0.005倍进行缩放
+		float dx = 0.005f * static_cast<float>(x - mLastMousePos.x);
+		float dy = 0.005f * static_cast<float>(y - mLastMousePos.y);
+
+		// 根据鼠标的输入更新摄像机的可视范围半径
+		mRadius += dx - dy;
+
+		// 限制可视半径的范围
+		mRadius = MathHelper::Clamp(mRadius, 3.0f, 15.0f);
+	}
+
+	mLastMousePos.x = x;
+	mLastMousePos.y = y;
 }
 
 // 创建描述符堆（本章只用创建CBV描述符堆）
