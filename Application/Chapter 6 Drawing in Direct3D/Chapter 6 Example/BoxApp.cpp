@@ -42,6 +42,9 @@ public:
 	virtual bool Initialize()override;
 
 private:
+	virtual void OnResize()override;
+	virtual void Update(const GameTimer& gt)override;
+	virtual void Draw(const GameTimer& gt)override;
 
 	void BuildDescriptorHeaps();
 	void BuildConstantBuffers();
@@ -65,7 +68,38 @@ private:
 	std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
 	ComPtr<ID3D12PipelineState> mPSO = nullptr;
+
+	XMFLOAT4X4 mWorld = MathHelper::Identity4x4();
+	XMFLOAT4X4 mView = MathHelper::Identity4x4();
+	XMFLOAT4X4 mProj = MathHelper::Identity4x4();
+
+	float mTheta = 1.5f * XM_PI;
+	float mPhi = XM_PIDIV4;
+	float mRadius = 5.0f;
 }; 
+
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
+	PSTR cmdLine, int showCmd)
+{
+	// 针对调试版本开启运行时内存检测
+#if defined(DEBUG) | defined(_DEBUG)
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
+
+	try
+	{
+		BoxApp theApp(hInstance);
+		if (!theApp.Initialize())
+			return 0;
+
+		return theApp.Run();
+	}
+	catch (DxException& e)
+	{
+		MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
+		return 0;
+	}
+}
 
 BoxApp::BoxApp(HINSTANCE hInstance) :D3DApp(hInstance)
 {
@@ -83,7 +117,125 @@ bool BoxApp::Initialize()
 	// 重置命令列表为执行初始化命令做好准备工作
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
+	BuildDescriptorHeaps();		   // 创建描述符堆
+	BuildConstantBuffers();		   // 创建常量缓冲区
+	BuildRootSignature();          // 构建根签名
+	BuildShadersAndInputLayout();  // 编译着色器程序、构建输入布局描述
+	BuildBoxGeometry();            // 构建立方体
+	BuildPSO();                    // 构建流水线状态对象
+
+	// 执行初始化命令
+	ThrowIfFailed(mCommandList->Close());
+	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+	// 等待初始化完成
+	FlushCommandQueue();
+
+	return true;
+}
+
+void BoxApp::OnResize()
+{
+	D3DApp::OnResize();
+
+	// 若用户调整了窗口尺寸，则更新纵横比并重新计算投影矩阵
+	XMMATRIX P = XMMatrixPerspectiveFovLH(0.25 * MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
+	XMStoreFloat4x4(&mProj, P);
+}
+
+void BoxApp::Update(const GameTimer& gt)
+{
+	// 将球坐标转换为笛卡尔坐标
+	float x = mRadius * sinf(mPhi) * cosf(mTheta);
+	float z = mRadius * sinf(mPhi) * sinf(mTheta);
+	float y = mRadius * cosf(mPhi);
+
+	// 构建观察矩阵
+	XMVECTOR pos = XMVectorSet(x, y, z, 1.0f);
+	XMVECTOR target = XMVectorZero();
+	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+
+	XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
+	XMStoreFloat4x4(&mView, view);
+
+	XMMATRIX world = XMLoadFloat4x4(&mWorld);
+	XMMATRIX proj = XMLoadFloat4x4(&mProj);
+	XMMATRIX worldViewProj = world * view * proj;
+
+	// 用当前最新的worldViewProj矩阵来更新常量缓冲区
+	ObjectConstants objConstants;
+	XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));  // 为何要转置？
+	mObjectCB->CopyData(0, objConstants);
+}
+
+void BoxApp::Draw(const GameTimer& gt)
+{
+	// 复用记录命令所用的内存
+	// 只有当GPU中的命令列表执行完毕后，我们才可以对其进行重置
+	ThrowIfFailed(mDirectCmdListAlloc->Reset());
+
+	// 通过函数ExecuteCommandList将命令列表加入命令队列后，便可对它进行重置
+	// 复用命令列表即复用其相应的内存
+	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
+
+	// 设置视口和裁剪矩形
+	mCommandList->RSSetViewports(1, &mScreenViewport);
+	mCommandList->RSSetScissorRects(1, &mScissorRect);
+
+	// 按照资源的用途指示其状态的转变，此处将资源从呈现状态转换为渲染目标状态
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+		D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+
+	// 清楚后台缓冲区和深度缓冲区
+	mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
+	mCommandList->ClearDepthStencilView(DepthStencilView(), 
+		D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 	
+	// 指定将要渲染的目标缓冲区
+	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());  // ?
+
+	// 设置描述符堆
+	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
+	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+	// 设置根签名
+	mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
+
+	// 设置输入装配阶段的顶点、索引缓冲区
+	mCommandList->IASetVertexBuffers(0, 1, &mBoxGeo->VertexBufferView());
+	mCommandList->IASetIndexBuffer(&mBoxGeo->IndexBufferView());
+	
+	// 设置图元拓扑为三角形列表（原文为D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST）
+	mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	// 绑定描述符表
+	mCommandList->SetGraphicsRootDescriptorTable(
+		0,  // 与HLSL中的代码register(b0)对应 
+		mCbvHeap->GetGPUDescriptorHandleForHeapStart()); 
+
+	// 绘制实例
+	mCommandList->DrawIndexedInstanced(
+		mBoxGeo->DrawArgs["box"].IndexCount,
+		1, 0, 0, 0);
+
+	// 按资源的用途指示其状态的转变，此处将资源从渲染目标状态转换为呈现状态
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+		D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+
+    // 完成命令的记录
+	ThrowIfFailed(mCommandList->Close());
+
+	// 向命令队列添加欲执行的命令列表
+	ID3D12CommandList* cmdsLists[] = { mCommandList.Get() };
+	mCommandQueue->ExecuteCommandLists(_countof(cmdsLists), cmdsLists);
+
+	// 呈现缓冲区内容并交换后台缓冲区与前台缓冲区
+	ThrowIfFailed(mSwapChain->Present(0, 0));
+	mCurrBackBuffer = (mCurrBackBuffer + 1) % SwapChainBufferCount;
+
+	// 等待绘制此帧的一系列命令执行完毕
+	FlushCommandQueue();
 }
 
 // 创建描述符堆（本章只用创建CBV描述符堆）
