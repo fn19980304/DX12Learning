@@ -6,7 +6,7 @@
 *		 按下鼠标左键拖动以旋转
 *		 按下鼠标右键拖动以缩放
 *
-*  作者： Frank Luna (C)
+*  作者： fn19980304
 */
 
 #include "../../Common/d3dApp.h"

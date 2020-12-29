@@ -183,7 +183,15 @@ struct MeshGeometry
 #define ReleaseCom(x) { if(x){ x->Release(); x = 0; } }
 #endif
 
-// 解决第6章习题2所用
+
+
+/*
+*  各章习题中的类及结构体
+*  作者： fn19980304
+*/
+
+
+// 6.2
 struct MeshGeometryForExiercise6_2
 {
     // 指定几何体网格集合的名称
