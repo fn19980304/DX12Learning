@@ -118,6 +118,9 @@ struct MeshGeometry
     Microsoft::WRL::ComPtr<ID3D12Resource> VertexBufferGPU = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> IndexBufferGPU = nullptr;
 
+    Microsoft::WRL::ComPtr<ID3D12Resource> VPosDataBufferGPU = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> VColorDataBufferGPU = nullptr;
+
     // 对应上传缓冲区
     Microsoft::WRL::ComPtr<ID3D12Resource> VertexBufferUploader = nullptr;
     Microsoft::WRL::ComPtr<ID3D12Resource> IndexBufferUploader = nullptr;
@@ -179,3 +182,80 @@ struct MeshGeometry
 #ifndef ReleaseCom
 #define ReleaseCom(x) { if(x){ x->Release(); x = 0; } }
 #endif
+
+// 解决第6章习题2所用
+struct MeshGeometryForExiercise6_2
+{
+    // 指定几何体网格集合的名称
+    std::string Name;
+
+    // 系统内存中的副本
+    // 由于顶点/索引可以是泛型格式，用Blob类型表示，待用户在使用时再将其转换为适当的类型
+    Microsoft::WRL::ComPtr<ID3DBlob> VPosDataBufferCPU = nullptr;
+    Microsoft::WRL::ComPtr<ID3DBlob> VColorDataBufferCPU = nullptr;
+    Microsoft::WRL::ComPtr<ID3DBlob> IndexBufferCPU = nullptr;
+
+    // 对应缓冲区GPU资源
+    Microsoft::WRL::ComPtr<ID3D12Resource> VPosDataBufferGPU = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> VColorDataBufferGPU = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> IndexBufferGPU = nullptr;
+
+    // 对应上传缓冲区
+    Microsoft::WRL::ComPtr<ID3D12Resource> VPosDataUploader = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> VColorDataUploader = nullptr;
+    Microsoft::WRL::ComPtr<ID3D12Resource> IndexBufferUploader = nullptr;
+
+    // 相关数据
+    UINT VPosDataByteStride = 0;                       // 每个顶点位置元素所占用的字节数
+    UINT VPosDataBufferByteSize = 0;                   // 顶点位置缓冲区大小（字节）
+    UINT VColorDataByteStride = 0;                     // 每个顶点颜色元素所占用的字节数
+    UINT VColorDataBufferByteSize = 0;                 // 顶点颜色缓冲区大小（字节）
+    DXGI_FORMAT IndexFormat = DXGI_FORMAT_R16_UINT;    // 索引元素格式
+    UINT IndexBufferByteSize = 0;                      // 索引缓冲区大小（字节）
+
+    // 一个MeshGeometry结构体能够存储一组顶点/索引缓冲区中的多个几何体
+    // 若利用下列容器来定义子网格几何体，我们就能单独地绘制出其中的子网格（单个几何体）
+    // 通过名字找到相应子网格几何体
+    std::unordered_map<std::string, SubmeshGeometry> DrawArgs;
+
+    // 顶点位置缓冲区视图
+    D3D12_VERTEX_BUFFER_VIEW VPosDataBufferView()const
+    {
+        D3D12_VERTEX_BUFFER_VIEW vposbv;
+        vposbv.BufferLocation = VPosDataBufferGPU->GetGPUVirtualAddress();
+        vposbv.StrideInBytes = VPosDataByteStride;
+        vposbv.SizeInBytes = VPosDataBufferByteSize;
+
+        return vposbv;
+    }
+
+    // 顶点颜色缓冲区视图
+    D3D12_VERTEX_BUFFER_VIEW VColorDataBufferView()const
+    {
+        D3D12_VERTEX_BUFFER_VIEW vcolorbv;
+        vcolorbv.BufferLocation = VColorDataBufferGPU->GetGPUVirtualAddress();
+        vcolorbv.StrideInBytes = VColorDataByteStride;
+        vcolorbv.SizeInBytes = VColorDataBufferByteSize;
+
+        return vcolorbv;
+    }
+
+    // 索引缓冲区视图
+    D3D12_INDEX_BUFFER_VIEW IndexBufferView()const
+    {
+        D3D12_INDEX_BUFFER_VIEW ibv;
+        ibv.BufferLocation = IndexBufferGPU->GetGPUVirtualAddress();
+        ibv.Format = IndexFormat;
+        ibv.SizeInBytes = IndexBufferByteSize;
+
+        return ibv;
+    }
+
+    // 待数据上传GPU后，就可以释放内存
+    void DisposeUploaders()
+    {
+        VPosDataUploader = nullptr;
+        VColorDataUploader = nullptr;
+        IndexBufferUploader = nullptr;
+    }
+};
