@@ -175,7 +175,7 @@ void BoxApp::Update(const GameTimer& gt)
 
 	// 用当前最新的worldViewProj矩阵来更新常量缓冲区
 	ObjectConstants objConstants;
-	XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));  // 为何要转置？
+	XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));
 	mObjectCB->CopyData(0, objConstants);
 }
 
@@ -203,7 +203,7 @@ void BoxApp::Draw(const GameTimer& gt)
 		D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
 	// 指定将要渲染的目标缓冲区
-	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());  // ?
+	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView()); 
 
 	// 设置描述符堆
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
