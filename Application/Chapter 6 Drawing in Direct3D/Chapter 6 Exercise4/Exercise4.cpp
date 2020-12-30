@@ -128,7 +128,7 @@ bool PyramidApp::Initialize()
 	BuildConstantBuffers();		   // 创建常量缓冲区
 	BuildRootSignature();          // 构建根签名
 	BuildShadersAndInputLayout();  // 编译着色器程序、构建输入布局描述
-	BuildPyramidGeometry();            // 构建立方体
+	BuildPyramidGeometry();        // 构建四棱锥
 	BuildPSO();                    // 构建流水线状态对象
 
 	// 执行初始化命令
@@ -267,7 +267,7 @@ void PyramidApp::OnMouseMove(WPARAM btnState, int x, int y)
 		float dx = XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
 		float dy = XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
 
-		// 根据鼠标的输入来更新摄像机绕立方体旋转的角度
+		// 根据鼠标的输入来更新摄像机绕四棱锥旋转的角度
 		mTheta += dx;
 		mPhi += dy;
 
@@ -309,7 +309,7 @@ void PyramidApp::BuildDescriptorHeaps()
 void PyramidApp::BuildConstantBuffers()
 {
 	// 创建了存储了一个ObjectConstants类型的常量缓冲区（数组）
-	// 该缓冲区存储了绘制n个物体所需的常量数据，由于本章只需要绘制一个立方体，n = 1
+	// 该缓冲区存储了绘制n个物体所需的常量数据，由于本题只需要绘制一个四棱锥，n = 1
 	mObjectCB = std::make_unique<UploadBuffer<ObjectConstants>>(md3dDevice.Get(), 1, true);
 
 	// 以256B的整数倍为其填充数据
@@ -410,7 +410,7 @@ void PyramidApp::BuildPyramidGeometry()
 		Vertex({ XMFLOAT3(-1.0f, -1.0f, +1.0f), XMFLOAT4(Colors::Green) }),  // v4
 	};
 
-	// 定义立方体的索引
+	// 定义四棱锥的索引
 	std::array<std::uint16_t, 18> indices =
 	{
 		// 前表面
@@ -490,7 +490,7 @@ void PyramidApp::BuildPSO()
 	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;    // 图元的拓扑类型
 	psoDesc.NumRenderTargets = 1;											   // 同时所用的渲染目标数量
 	psoDesc.RTVFormats[0] = mBackBufferFormat;								   // 渲染目标格式
-	psoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;							   // 多重采用对每个像素的采样数量
+	psoDesc.SampleDesc.Count = m4xMsaaState ? 4 : 1;						   // 多重采用对每个像素的采样数量
 	psoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;      // 多重采样的质量级别
 	psoDesc.DSVFormat = mDepthStencilFormat;                                   // 深度/模板缓冲区的格式
 
