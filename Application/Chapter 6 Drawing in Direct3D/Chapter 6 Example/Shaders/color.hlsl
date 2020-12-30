@@ -7,6 +7,7 @@
 cbuffer cbPerOject : register(b0)
 {
     float4x4 gWorldViewProj;
+    //float gTime;  // 习题6所用变量
 };
 
 // 输入签名结构体
@@ -27,6 +28,10 @@ struct VertexOut
 VertexOut VS(VertexIn vin)
 {
     VertexOut vout;
+    
+    // 习题6添加代码
+    //vin.PosL.xy += 0.5f * sin(vin.PosL.x) * sin(3.0f * gTime);
+    //vin.PosL.z *= 0.6f + 0.4f * sin(2.0f * gTime);
     
     // 将顶点由局部空间变换到齐次裁剪空间
     vout.PosH = mul(float4(vin.PosL, 1.0f), gWorldViewProj);
