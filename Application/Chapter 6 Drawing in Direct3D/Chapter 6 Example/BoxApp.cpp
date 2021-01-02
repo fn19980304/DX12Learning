@@ -501,6 +501,13 @@ void BoxApp::BuildPSO()
 	};											                               // 像素着色器
 
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);          // 光栅化状态
+	// 习题8、9
+	//CD3DX12_RASTERIZER_DESC rsDesc(D3D12_DEFAULT);
+	//rsDesc.FillMode = D3D12_FILL_MODE_WIREFRAME;                               // 线框模式渲染
+	//rsDesc.CullMode = D3D12_CULL_MODE_FRONT;                                   // 正面剔除
+	//rsDesc.CullMode = D3D12_CULL_MODE_BACK;                                    // 背面剔除
+	//psoDesc.RasterizerState = rsDesc;
+
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);					   // 混合状态
 	psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);     // 深度/模板状态
 	psoDesc.SampleMask = UINT_MAX;											   // 对所有点进行采样
