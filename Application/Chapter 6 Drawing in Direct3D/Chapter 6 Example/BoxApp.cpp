@@ -29,7 +29,7 @@ struct Vertex
 struct ObjectConstants
 {
 	XMFLOAT4X4 WorldViewProj = MathHelper::Identity4x4();
-	//float gTime = 0.0f;  // 习题6所用变量
+	//float gTime = 0.0f;  // 习题6、14所用变量
 };
 
 class BoxApp :public D3DApp
@@ -160,7 +160,7 @@ void BoxApp::Update(const GameTimer& gt)
 	float z = mRadius * sinf(mPhi) * sinf(mTheta);
 	float y = mRadius * cosf(mPhi);
 
-	// 习题6中根据总时间更新gTime的值
+	// 习题6、14中根据总时间更新gTime的值
 	//float t = gt.TotalTime();
 
 	// 构建观察矩阵
@@ -178,7 +178,7 @@ void BoxApp::Update(const GameTimer& gt)
 	// 用当前最新的worldViewProj矩阵来更新常量缓冲区
 	ObjectConstants objConstants;
 	XMStoreFloat4x4(&objConstants.WorldViewProj, XMMatrixTranspose(worldViewProj));  // 为何要转置？
-	//objConstants.gTime = t;  // 习题6
+	//objConstants.gTime = t;  // 习题6、14
 	mObjectCB->CopyData(0, objConstants);
 }
 
