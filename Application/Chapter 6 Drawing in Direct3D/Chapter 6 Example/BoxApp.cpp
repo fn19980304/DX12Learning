@@ -208,7 +208,7 @@ void BoxApp::Draw(const GameTimer& gt)
 		D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 	
 	// 指定将要渲染的目标缓冲区
-	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView());  // ?
+	mCommandList->OMSetRenderTargets(1, &CurrentBackBufferView(), true, &DepthStencilView()); 
 
 	// 设置描述符堆
 	ID3D12DescriptorHeap* descriptorHeaps[] = { mCbvHeap.Get() };
