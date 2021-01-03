@@ -193,6 +193,8 @@ void BoxApp::Draw(const GameTimer& gt)
 	ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), mPSO.Get()));
 
 	// 设置视口和裁剪矩形
+	//mScreenViewport.TopLeftX = -mClientWidth / 4;                  // 习题12
+	//mScissorRect = { 0, 0, mClientWidth / 2, mClientHeight / 2 };  // 习题13
 	mCommandList->RSSetViewports(1, &mScreenViewport);
 	mCommandList->RSSetScissorRects(1, &mScissorRect);
 
