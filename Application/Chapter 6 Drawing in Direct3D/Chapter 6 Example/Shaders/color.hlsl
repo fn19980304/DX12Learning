@@ -7,7 +7,8 @@
 cbuffer cbPerOject : register(b0)
 {
     float4x4 gWorldViewProj;
-    //float gTime;  // 习题6、14所用变量
+    //float4 gPulseColor;  // 习题16
+    //float gTime;         // 习题6、14、16
 };
 
 // 输入签名结构体
@@ -50,5 +51,16 @@ VertexOut VS(VertexIn vin)
 float4 PS(VertexOut pin) : SV_Target
 {
     //clip(pin.Color.r - 0.5f);  // 习题15
+    
+    // 习题16
+    //const float pi = 3.14159;
+    
+    //// 随着时间流逝，令正弦函数的值在[0,1]区间内周期性地变化
+    //float s = 0.5f * sin(2 * gTime - 0.25f * pi) + 0.5f;
+    
+    //// 基于参数s在pin.color与gpulsecolor之间进行线性插值
+    //float4 c = lerp(pin.Color, gPulseColor, s);
+    
+    //return c;
     return pin.Color;
 }
